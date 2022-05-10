@@ -33,6 +33,16 @@ let unwrapSourceCode = sc => {
     return err, res
 }
 
+let handleSingletonSource = (contractName, contractContent) => {
+    let res = {}
+    let contractFile = `${contractName}.sol`
+    res[contractFile] = {
+        content: contractContent
+    }
+
+    return res
+}
+
 let processESRes = resObj => {
     // map script name to file content
     let scriptsToContent = {}
@@ -42,9 +52,17 @@ let processESRes = resObj => {
 
     let [ innerRes ] = resObj.result || {}
     let resSC = innerRes.SourceCode
-    let err, sc = unwrapSourceCode(resSC)
 
-    if (!err) scriptsToContent = sc.sources
+    let err, sc = unwrapSourceCode(resSC)
+    if (!err) {
+        if (sc && sc.sources) {
+            scriptsToContent = sc.sources
+        } else {
+            // handle singleton contract here
+            let contractName = innerRes.ContractName
+            scriptsToContent = handleSingletonSource(contractName, resSC)
+        }
+    }
 
     return scriptsToContent
 }

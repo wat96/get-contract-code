@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "setup": "yarn; npm link"
   },
   "dependencies": {
     "fs-extra": "^10.1.0",
