@@ -94,16 +94,20 @@ let writeContracts = scriptsToContent => {
     })
 }
 
-let main = async () => {
-    const ADDR_IND = 2
-    if (process.argv.length != 3) throw Error("wrong number of arguments!")
-
-    let contractAddr = process.argv[ADDR_IND]
+let exportMain = async (contractAddr) => {
     return makeContractQuery(contractAddr)
         .then(res => res.json())
         .then(processESRes)
         .then(writeContracts)
         .then(() => console.log(SUCCESS_MSG))
+}
+
+let main = async () => {
+    const ADDR_IND = 2
+    if (process.argv.length != 3) throw Error("wrong number of arguments!")
+
+    let contractAddr = process.argv[ADDR_IND]
+    return exportMain(contractAddr)
 }
 
 if (require.main === module) {
@@ -114,3 +118,5 @@ if (require.main === module) {
         process.exit(1)
         })
 }
+
+module.exports = exportMain
