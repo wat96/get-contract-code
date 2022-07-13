@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 const _ = require('lodash')
+const ethers = require('ethers')
+const parseArgs = require('minimist')
 const fetch = require('node-fetch')
 const fs = require('fs-extra')
 const path = require('path')
@@ -7,14 +9,16 @@ const process = require('process')
 
 const SUCCESS_MSG = "Contracts downloaded successfully!"
 const ETHERSCAN_API = "https://api.etherscan.io/api"
+const ETHERSCAN_RINKEBY_API = "https://api-rinkeby.etherscan.io/api"
 const ETHERSCAN_FAIL_STATUS = 0
 const BASE_CONTRACT_PATH = "contracts"
 const SOL_MOD_INCL = "@"
 const SOL_EXT = ".sol"
 
-let makeContractQuery = contractAddr => {
+let makeContractQuery = (contractAddr, isRinkeby) => {
+    let esAPI = isRinkeby ? ETHERSCAN_RINKEBY_API : ETHERSCAN_API
     let contractCodeQuery = `?module=contract&action=getsourcecode&address=${contractAddr}`
-    let reqLink = `${ETHERSCAN_API}${contractCodeQuery}`
+    let reqLink = `${esAPI}${contractCodeQuery}`
 
     return fetch(reqLink)
 }
@@ -60,7 +64,8 @@ let processESRes = resObj => {
         } else {
             // handle singleton contract here
             let contractName = innerRes.ContractName
-            scriptsToContent = handleSingletonSource(contractName, resSC)
+            if (contractName)
+                scriptsToContent = handleSingletonSource(contractName, resSC)
         }
     }
 
@@ -94,8 +99,8 @@ let writeContracts = scriptsToContent => {
     })
 }
 
-let exportMain = async (contractAddr) => {
-    return makeContractQuery(contractAddr)
+let exportMain = async (contractAddr, isRinkeby=false) => {
+    return makeContractQuery(contractAddr, isRinkeby)
         .then(res => res.json())
         .then(processESRes)
         .then(writeContracts)
@@ -103,11 +108,23 @@ let exportMain = async (contractAddr) => {
 }
 
 let main = async () => {
-    const ADDR_IND = 2
-    if (process.argv.length != 3) throw Error("wrong number of arguments!")
+    const parseArgsOpts = {
+        alias: {
+            'r': 'rinkeby'
+        },
+        boolean: ['rinkeby'],
+        string: ['_'],
+        unknown: ethers.utils.isAddress
+    }
+    let parsedArgs = parseArgs(process.argv, parseArgsOpts)
+    let contractAddr = ethers.utils.getAddress(parsedArgs._[0])
+    let isRinkeby = parsedArgs.rinkeby
 
-    let contractAddr = process.argv[ADDR_IND]
-    return exportMain(contractAddr)
+    if (contractAddr) {
+        return exportMain(contractAddr, isRinkeby)
+    } else {
+        throw Error("No valid contract address provided!")
+    }
 }
 
 if (require.main === module) {
