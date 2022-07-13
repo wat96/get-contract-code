@@ -117,10 +117,11 @@ let main = async () => {
         unknown: ethers.utils.isAddress
     }
     let parsedArgs = parseArgs(process.argv, parseArgsOpts)
-    let contractAddr = ethers.utils.getAddress(parsedArgs._[0])
+    let contractAddr = parsedArgs._[0]
     let isRinkeby = parsedArgs.rinkeby
 
     if (contractAddr) {
+        contractAddr = ethers.utils.getAddress(contractAddr)
         return exportMain(contractAddr, isRinkeby)
     } else {
         throw Error("No valid contract address provided!")
